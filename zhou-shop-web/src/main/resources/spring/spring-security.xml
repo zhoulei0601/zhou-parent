@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/security"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xmlns:dubbo="http://code.alibabatech.com/schema/dubbo" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+						http://code.alibabatech.com/schema/dubbo http://code.alibabatech.com/schema/dubbo/dubbo.xsd
+						http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security.xsd">
+	<!--设置页面不登录也可访问-->
+	<http pattern="/*.html" security="none"/>
+	<http pattern="/css/**" security="none"/>
+	<http pattern="/js/**" security="none"/>
+	<http pattern="/img/**" security="none"/>
+	<http pattern="/plugins/**" security="none"/>
+	<http pattern="/seller/add.do" security="none"/>
+	<!--拦截规则 expressions是否启用SPEL表达式-->
+	<http use-expressions="false">
+		<!--/* 根目录下一级资源，/**根目录下一级资源包括子目录。需以ROLE_开头  -->
+		<intercept-url pattern="/**" access="ROLE_SELLER"></intercept-url>
+		<!--开启表单登录功能-->
+		<form-login login-page="/shoplogin.html" default-target-url="/admin/index.html" authentication-failure-url="/shoplogin.html" always-use-default-target="true" />
+		<!--关闭csrf保护-->
+		<csrf disabled="true"/>
+		<headers>
+			<!--允许页面frameset 展示-->
+			<frame-options policy="SAMEORIGIN"/>
+		</headers>
+		<!--退出登录-->
+		<logout/>
+	</http>
+
+	<!--认证管理器-->
+	<authentication-manager>
+		<authentication-provider user-service-ref="userDetailService">
+			<password-encoder ref="bCryptPasswordEncoder"/>
+		</authentication-provider>
+	</authentication-manager>
+
+	<!--认证类-->
+	<beans:bean id="userDetailService" class="com.zhou.shop.service.UserDetailsServiceImpl">
+		<beans:property name="sellerService" ref="sellerService"/>
+	</beans:bean>
+
+	<!-- 引用dubbo 服务 -->
+	<dubbo:application name="zhou-shop-web" />
+	<dubbo:registry address="zookeeper://192.168.25.128:2181"/>
+	<dubbo:reference id="sellerService" interface="com.zhou.sellergoods.service.SellerService"></dubbo:reference>
+	<!--BCrypt-->
+	<beans:bean id="bCryptPasswordEncoder" class="org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder"/>
+
+</beans:beans>
