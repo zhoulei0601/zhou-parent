@@ -1,5 +1,7 @@
 package com.zhou.sellergoods.service;
 import java.util.List;
+import java.util.Map;
+
 import com.zhou.pojo.TbTypeTemplate;
 
 import entity.PageResult;
@@ -57,5 +59,14 @@ public interface TypeTemplateService {
 	 * @return
 	 */
 	public PageResult findPage(TbTypeTemplate typeTemplate, int pageNum, int pageSize);
+
+	/**
+	  * @description 查询规格列表
+	  * @params [templateId 模板id]
+	  * @return java.util.List<java.util.Map>
+	  * @author zhoulei
+	  * @createtime 2020-04-01 20:56
+	  */
+	List<Map> findSpecList(Long templateId);
 	
 }

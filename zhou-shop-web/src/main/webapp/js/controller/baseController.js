@@ -26,4 +26,14 @@ app.controller("baseController",function($scope){
                 $scope.selectIds.splice(index,1);//移除位置，移除数量
             }
         }
+
+        //在数组中 根据key的值查找key对象
+        $scope.searchObjectBykey = function(arr,key,keyValue){
+            for(var i = 0 ; i < arr.length ; i++){
+                if(arr[i][key] == keyValue){
+                    return arr[i];
+                }
+             }
+             return null;
+        }
 });

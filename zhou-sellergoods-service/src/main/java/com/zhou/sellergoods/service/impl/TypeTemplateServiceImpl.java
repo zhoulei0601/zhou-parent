@@ -1,5 +1,11 @@
 package com.zhou.sellergoods.service.impl;
 import java.util.List;
+import java.util.Map;
+
+import com.alibaba.fastjson.JSON;
+import com.zhou.mapper.TbSpecificationOptionMapper;
+import com.zhou.pojo.TbSpecificationOption;
+import com.zhou.pojo.TbSpecificationOptionExample;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.alibaba.dubbo.config.annotation.Service;
 import com.github.pagehelper.Page;
@@ -12,6 +18,8 @@ import com.zhou.sellergoods.service.TypeTemplateService;
 
 import entity.PageResult;
 
+import static com.alibaba.fastjson.JSON.parseArray;
+
 /**
  * 服务实现层
  * @author Administrator
@@ -22,6 +30,8 @@ public class TypeTemplateServiceImpl implements TypeTemplateService {
 
 	@Autowired
 	private TbTypeTemplateMapper typeTemplateMapper;
+	@Autowired
+	private TbSpecificationOptionMapper specificationOptionMapper; //规格选项mapper
 	
 	/**
 	 * 查询全部
@@ -79,7 +89,7 @@ public class TypeTemplateServiceImpl implements TypeTemplateService {
 	}
 	
 	
-		@Override
+	@Override
 	public PageResult findPage(TbTypeTemplate typeTemplate, int pageNum, int pageSize) {
 		PageHelper.startPage(pageNum, pageSize);
 		
@@ -105,5 +115,19 @@ public class TypeTemplateServiceImpl implements TypeTemplateService {
 		Page<TbTypeTemplate> page= (Page<TbTypeTemplate>)typeTemplateMapper.selectByExample(example);		
 		return new PageResult(page.getTotal(), page.getResult());
 	}
-	
+
+	@Override
+	public List<Map> findSpecList(Long templateId) {
+		TbTypeTemplate typeTemplate = typeTemplateMapper.selectByPrimaryKey(templateId);
+		List<Map> spcList = JSON.parseArray(typeTemplate.getSpecIds(),Map.class);
+		for(Map spcMap : spcList){
+			TbSpecificationOptionExample selectByExample = new TbSpecificationOptionExample();
+			TbSpecificationOptionExample.Criteria criteria = selectByExample.createCriteria();
+			criteria.andSpecIdEqualTo(new Long((Integer)spcMap.get("id")));
+			List<TbSpecificationOption> spcOptionList = specificationOptionMapper.selectByExample(selectByExample);
+			spcMap.put("options",spcOptionList);
+		}
+		return spcList;
+	}
+
 }
