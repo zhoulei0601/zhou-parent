@@ -176,4 +176,27 @@ app.controller('goodsController' ,function($scope,$controller,goodsService,uploa
 			$scope.entity.goodsDesc.specificationItems.push({"attributeName" : name , "attributeValue" : [value]});
 		}
 	}
+
+	//创建SKU列表
+	$scope.createItemList = function(){
+		$scope.entity.itemList = [{spec : {},price : 0,num : 999, status : '0', isDefault : '0'}];
+		var items = $scope.entity.goodsDesc.specificationItems;
+		for(let i = 0; i < items.length; i++){
+			$scope.entity.itemList = addItemList($scope.entity.itemList,items[i].attributeName,items[i].attributeValue);
+		}
+	}
+
+	//添加列表
+	addItemList = function(list,columnNames,columnValues){
+		var newList = [];
+		for(let i = 0; i < list.length; i++){
+			var oldItem = list[i];
+			for(let j = 0; j < columnValues.length; j++){
+				var newItem = JSON.parse(JSON.stringify(oldItem));
+				newItem.spec[columnNames] = columnValues[j];
+				newList.push(newItem);
+			}
+		}
+		return newList;
+	}
 });	
