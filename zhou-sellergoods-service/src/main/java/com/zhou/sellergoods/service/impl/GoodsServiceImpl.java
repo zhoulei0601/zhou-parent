@@ -1,21 +1,20 @@
 package com.zhou.sellergoods.service.impl;
+
+import com.alibaba.dubbo.config.annotation.Service;
+import com.alibaba.fastjson.JSON;
+import com.github.pagehelper.Page;
+import com.github.pagehelper.PageHelper;
+import com.zhou.mapper.*;
+import com.zhou.pojo.*;
+import com.zhou.pojo.TbGoodsExample.Criteria;
+import com.zhou.pojogroup.Goods;
+import com.zhou.sellergoods.service.GoodsService;
+import entity.PageResult;
+import org.springframework.beans.factory.annotation.Autowired;
+
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-
-import com.alibaba.fastjson.JSON;
-import com.zhou.mapper.*;
-import com.zhou.pojo.*;
-import com.zhou.pojogroup.Goods;
-import org.springframework.beans.factory.annotation.Autowired;
-import com.alibaba.dubbo.config.annotation.Service;
-import com.github.pagehelper.Page;
-import com.github.pagehelper.PageHelper;
-import com.zhou.pojo.TbGoodsExample.Criteria;
-import com.zhou.sellergoods.service.GoodsService;
-
-import entity.PageResult;
-import org.springframework.security.core.context.SecurityContextHolder;
 
 /**
  * 服务实现层
@@ -68,31 +67,8 @@ public class GoodsServiceImpl implements GoodsService {
 		TbGoodsDesc tbGoodsDesc = goods.getGoodsDesc();
 		tbGoodsDesc.setGoodsId(tbGoods.getId());
 		goodsDescMapper.insert(tbGoodsDesc);
-		List<TbItem> itemList = goods.getItemList();
-		 //是否启用规格
-		if("1".equals(tbGoods.getIsEnableSpec())){
-			for(TbItem item : itemList){
-				//SPU + 规格选项值
-				String title = goods.getGoods().getGoodsName();
-				Map<String,Object> specMap = JSON.parseObject(item.getSpec());
-				for(Object obj : specMap.values()){
-					title += " " +  obj.toString();
-				}
-				item.setTitle(title);
-				setItemValues(item,tbGoods,tbGoodsDesc);
-				tbItemMapper.insert(item);
-			}
-		}else{
-			TbItem item = new TbItem();
-			item.setPrice(tbGoods.getPrice());
-			item.setNum(999);
-			item.setIsDefault("1");
-			item.setTitle(tbGoods.getGoodsName());
-			item.setStatus("1");
-			item.setSpec("{}");
-			setItemValues(item,tbGoods,tbGoodsDesc);
-			tbItemMapper.insert(item);
-		}
+		addItem(goods,tbGoods,tbGoodsDesc);
+
 	}
 
 	/**
@@ -124,13 +100,58 @@ public class GoodsServiceImpl implements GoodsService {
 		}
 	}
 
+	/**
+	  * @description 增加 item
+	  * @params [goods, tbGoods, tbGoodsDesc]
+	  * @return void
+	  * @author zhoulei
+	  * @createtime 2020-04-09 15:37
+	  */
+	private void addItem(Goods goods,TbGoods tbGoods,TbGoodsDesc tbGoodsDesc){
+		List<TbItem> itemList = goods.getItemList();
+		//是否启用规格
+		if("1".equals(tbGoods.getIsEnableSpec())){
+			for(TbItem item : itemList){
+				//SPU + 规格选项值
+				String title = tbGoods.getGoodsName();
+				Map<String,Object> specMap = JSON.parseObject(item.getSpec());
+				for(Object obj : specMap.values()){
+					title += " " +  obj.toString();
+				}
+				item.setTitle(title);
+				setItemValues(item,tbGoods,tbGoodsDesc);
+				tbItemMapper.insert(item);
+			}
+		}else{
+			TbItem item = new TbItem();
+			item.setPrice(tbGoods.getPrice());
+			item.setNum(999);
+			item.setIsDefault("1");
+			item.setTitle(tbGoods.getGoodsName());
+			item.setStatus("1");
+			item.setSpec("{}");
+			setItemValues(item,tbGoods,tbGoodsDesc);
+			tbItemMapper.insert(item);
+		}
+	}
 	
 	/**
 	 * 修改
 	 */
 	@Override
-	public void update(TbGoods goods){
-		goodsMapper.updateByPrimaryKey(goods);
+	public void update(Goods goods){
+		TbGoods tbGoods = goods.getGoods();
+		TbGoodsDesc tbGoodsDesc = goods.getGoodsDesc();
+		//商品基本表
+		goodsMapper.updateByPrimaryKey(tbGoods);
+		//商品扩展表
+		goodsDescMapper.updateByPrimaryKey(tbGoodsDesc);
+		//商品SKU
+		TbItemExample example = new TbItemExample();
+		TbItemExample.Criteria criteria = example.createCriteria();
+		criteria.andGoodsIdEqualTo(goods.getGoods().getId());
+		tbItemMapper.deleteByExample(example);
+		addItem(goods,tbGoods,tbGoodsDesc);
 	}	
 	
 	/**
@@ -139,8 +160,21 @@ public class GoodsServiceImpl implements GoodsService {
 	 * @return
 	 */
 	@Override
-	public TbGoods findOne(Long id){
-		return goodsMapper.selectByPrimaryKey(id);
+	public Goods findOne(Long id){
+		Goods goods = new Goods();
+		//商品基本表
+		TbGoods tbGoods = goodsMapper.selectByPrimaryKey(id);
+		goods.setGoods(tbGoods);
+		//商品扩展表
+		TbGoodsDesc goodsDesc = goodsDescMapper.selectByPrimaryKey(id);
+		goods.setGoodsDesc(goodsDesc);
+		//商品SKU
+		TbItemExample example = new TbItemExample();
+		TbItemExample.Criteria criteria = example.createCriteria();
+		criteria.andGoodsIdEqualTo(tbGoods.getId());
+		List<TbItem> itemList = tbItemMapper.selectByExample(example);
+		goods.setItemList(itemList);
+		return goods;
 	}
 
 	/**
@@ -162,8 +196,9 @@ public class GoodsServiceImpl implements GoodsService {
 		Criteria criteria = example.createCriteria();
 		
 		if(goods!=null){			
-						if(goods.getSellerId()!=null && goods.getSellerId().length()>0){
-				criteria.andSellerIdLike("%"+goods.getSellerId()+"%");
+			if(goods.getSellerId()!=null && goods.getSellerId().length()>0){
+//				criteria.andSellerIdLike("%"+goods.getSellerId()+"%");
+				criteria.andSellerIdEqualTo(goods.getSellerId());
 			}
 			if(goods.getGoodsName()!=null && goods.getGoodsName().length()>0){
 				criteria.andGoodsNameLike("%"+goods.getGoodsName()+"%");
@@ -192,5 +227,16 @@ public class GoodsServiceImpl implements GoodsService {
 		Page<TbGoods> page= (Page<TbGoods>)goodsMapper.selectByExample(example);		
 		return new PageResult(page.getTotal(), page.getResult());
 	}
-	
+
+	@Override
+	public int updateStatus(String[] ids, String status) {
+		int num = 0;
+		for(String id : ids){
+			TbGoods tbGoods = goodsMapper.selectByPrimaryKey(Long.parseLong(id));
+			tbGoods.setAuditStatus(status);
+			num += goodsMapper.updateByPrimaryKey(tbGoods);
+		}
+		return num;
+	}
+
 }

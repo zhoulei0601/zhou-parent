@@ -1,6 +1,7 @@
 package com.zhou.manager.controller;
 import java.util.List;
 
+import com.zhou.pojogroup.Goods;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -47,7 +48,7 @@ public class GoodsController {
 	 * @return
 	 */
 	@RequestMapping("/update")
-	public Result update(@RequestBody TbGoods goods){
+	public Result update(@RequestBody Goods goods){
 		try {
 			goodsService.update(goods);
 			return new Result(true, "修改成功");
@@ -63,7 +64,7 @@ public class GoodsController {
 	 * @return
 	 */
 	@RequestMapping("/findOne")
-	public TbGoods findOne(Long id){
+	public Goods findOne(Long id){
 		return goodsService.findOne(id);		
 	}
 	
@@ -85,7 +86,6 @@ public class GoodsController {
 	
 		/**
 	 * 查询+分页
-	 * @param brand
 	 * @param page
 	 * @param rows
 	 * @return
@@ -93,6 +93,22 @@ public class GoodsController {
 	@RequestMapping("/search")
 	public PageResult search(@RequestBody TbGoods goods, int page, int rows  ){
 		return goodsService.findPage(goods, page, rows);		
+	}
+
+	/**
+	  * @description 更新状态
+	  * @params [goods, page, rows]
+	  * @return entity.PageResult
+	  * @author zhoulei
+	  * @createtime 2020-04-10 09:18
+	  */
+	@RequestMapping("/updateStatus")
+	public Result updateStatus( String ids,String status){
+		int num = goodsService.updateStatus(ids.split(","),status);
+		if(num > 0){
+			return  new Result(true, "成功");
+		}
+		return new Result(false, "失败");
 	}
 	
 }
