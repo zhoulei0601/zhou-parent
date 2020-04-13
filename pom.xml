@@ -17,6 +17,9 @@
     <module>zhou-sellergoods-service</module>
     <module>zhou-manager-web</module>
     <module>zhou-shop-web</module>
+    <module>zhou-content-interface</module>
+    <module>zhou-content-service</module>
+      <module>zhou-portal-web</module>
   </modules>
 
 

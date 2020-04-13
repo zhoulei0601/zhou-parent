@@ -20,7 +20,17 @@
     </dependency>
     <dependency>
       <groupId>com.zhou</groupId>
+      <artifactId>zhou-content-interface</artifactId>
+      <version>1.0</version>
+    </dependency>
+    <dependency>
+      <groupId>com.zhou</groupId>
       <artifactId>zhou-pojo</artifactId>
+      <version>1.0</version>
+    </dependency>
+    <dependency>
+      <groupId>com.zhou</groupId>
+      <artifactId>zhou-common</artifactId>
       <version>1.0</version>
     </dependency>
     <!-- Spring -->
