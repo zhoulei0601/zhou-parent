@@ -8,9 +8,8 @@
        <artifactId>zhou-parent</artifactId>
        <version>1.0</version>
    </parent>
-  <artifactId>zhou-common</artifactId>
-  <version>1.0</version>
-  <packaging>jar</packaging>
+   <artifactId>zhou-common</artifactId>
+   <packaging>jar</packaging>
 
    <dependencies>
        <!-- 文件上传组件 -->
@@ -22,5 +21,25 @@
            <groupId>commons-fileupload</groupId>
            <artifactId>commons-fileupload</artifactId>
        </dependency>
+       <!-- 缓存 -->
+       <dependency>
+           <groupId>redis.clients</groupId>
+           <artifactId>jedis</artifactId>
+       </dependency>
+       <dependency>
+           <groupId>org.springframework.data</groupId>
+           <artifactId>spring-data-redis</artifactId>
+       </dependency>
    </dependencies>
+    <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <includes>
+                    <!--包含文件夹以及子文件夹下所有资源-->
+                    <include>**/*.*</include>
+                </includes>
+            </resource>
+        </resources>
+    </build>
 </project>

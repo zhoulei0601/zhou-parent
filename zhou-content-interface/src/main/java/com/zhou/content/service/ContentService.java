@@ -57,5 +57,14 @@ public interface ContentService {
 	 * @return
 	 */
 	public PageResult findPage(TbContent content, int pageNum, int pageSize);
+
+	/**
+	  * @description 根据categoryId，查询内容列表
+	  * @params [categoryId]
+	  * @return java.util.List<com.zhou.pojo.TbContent>
+	  * @author zhoulei
+	  * @createtime 2020-04-13 09:56
+	  */
+	List<TbContent> listContentByCategoryId(Long categoryId);
 	
 }
