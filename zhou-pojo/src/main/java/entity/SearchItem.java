@@ -4,6 +4,7 @@ import com.zhou.pojo.TbItem;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @description: TbItem 搜索组合类
@@ -12,8 +13,16 @@ import java.util.List;
  **/
 public class SearchItem implements Serializable {
     private static final long serialVersionUID = 8904181655445638464L;
-    private String keyWords;
-    private List<TbItem> itemList;
+    private String keyWords; //关键字
+    private List<TbItem> itemList;//列表
+    private List<String> categoryList; //商品分类列表
+    private List<Map> brandList ;//品牌列表
+    private List<Map> specList;//规格列表
+    private String category;//商品分类
+    private String brand;//品牌
+    private Map spec;//规格
+
+
 
     public List<TbItem> getItemList() {
         return itemList;
@@ -29,5 +38,53 @@ public class SearchItem implements Serializable {
 
     public void setKeyWords(String keyWords) {
         this.keyWords = keyWords;
+    }
+
+    public List<String> getCategoryList() {
+        return categoryList;
+    }
+
+    public void setCategoryList(List<String> categoryList) {
+        this.categoryList = categoryList;
+    }
+
+    public List<Map> getBrandList() {
+        return brandList;
+    }
+
+    public void setBrandList(List<Map> brandList) {
+        this.brandList = brandList;
+    }
+
+    public List<Map> getSpecList() {
+        return specList;
+    }
+
+    public void setSpecList(List<Map> specList) {
+        this.specList = specList;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
+
+    public String getBrand() {
+        return brand;
+    }
+
+    public void setBrand(String brand) {
+        this.brand = brand;
+    }
+
+    public void setSpec(Map spec) {
+        this.spec = spec;
+    }
+
+    public Map getSpec() {
+        return spec;
     }
 }

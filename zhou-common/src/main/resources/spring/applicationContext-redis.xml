@@ -22,10 +22,25 @@
    </bean>  
   
    <bean id="JedisConnectionFactory" class="org.springframework.data.redis.connection.jedis.JedisConnectionFactory" 
-       p:host-name="${redis.host}" p:port="${redis.port}" p:password="${redis.pass}" p:pool-config-ref="poolConfig"/>  
-   
+       p:host-name="${redis.host}" p:port="${redis.port}" p:password="${redis.pass}" p:pool-config-ref="poolConfig"/>
+
+    <!--注意：StringRedisTemplate继承RedisTemplate,但是两者的数据是不共通的。
+        主要区别使用的序列化类。RedisTemplate使用的是JdkSerializationRedisSerializer StringRedisTemplate使用的是StringRedisSerializer
+    -->
+    <!--字符串类型数据-->
+    <bean id="stringRedisTemplate" class="org.springframework.data.redis.core.StringRedisTemplate">
+        <property name="connectionFactory" ref="JedisConnectionFactory"></property>
+    </bean>
+
+    <!--数据是复杂的对象类型，取出的时候又不想做任何的数据转换，直接从Redis里面取出一个对象-->
    <bean id="redisTemplate" class="org.springframework.data.redis.core.RedisTemplate">  
-    	<property name="connectionFactory" ref="JedisConnectionFactory" />  
-   </bean>  
+       <property name="connectionFactory" ref="JedisConnectionFactory" />
+       <property name="keySerializer">
+           <bean  class="org.springframework.data.redis.serializer.StringRedisSerializer"></bean>
+       </property>
+       <property name="valueSerializer">
+           <bean class="org.springframework.data.redis.serializer.JdkSerializationRedisSerializer"></bean>
+       </property>
+   </bean>
       
 </beans>  

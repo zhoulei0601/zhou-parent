@@ -17,6 +17,7 @@ import com.zhou.pojo.TbTypeTemplateExample.Criteria;
 import com.zhou.sellergoods.service.TypeTemplateService;
 
 import entity.PageResult;
+import org.springframework.data.redis.core.RedisTemplate;
 
 import static com.alibaba.fastjson.JSON.parseArray;
 
@@ -32,6 +33,9 @@ public class TypeTemplateServiceImpl implements TypeTemplateService {
 	private TbTypeTemplateMapper typeTemplateMapper;
 	@Autowired
 	private TbSpecificationOptionMapper specificationOptionMapper; //规格选项mapper
+	//redis 服务
+	@Autowired
+	private RedisTemplate redisTemplate;
 	
 	/**
 	 * 查询全部
@@ -112,7 +116,9 @@ public class TypeTemplateServiceImpl implements TypeTemplateService {
 	
 		}
 		
-		Page<TbTypeTemplate> page= (Page<TbTypeTemplate>)typeTemplateMapper.selectByExample(example);		
+		Page<TbTypeTemplate> page= (Page<TbTypeTemplate>)typeTemplateMapper.selectByExample(example);
+		//一次性缓存品牌及规格列表
+		cacheBrandAndSpec();
 		return new PageResult(page.getTotal(), page.getResult());
 	}
 
@@ -129,5 +135,25 @@ public class TypeTemplateServiceImpl implements TypeTemplateService {
 		}
 		return spcList;
 	}
+
+	/**
+	  * @description 缓存品牌及规格列表
+	  * @params []
+	  * @return void
+	  * @author zhoulei
+	  * @createtime 2020-04-15 09:06
+	  */
+	private void cacheBrandAndSpec(){
+		List<TbTypeTemplate> typeTemplateList = findAll();
+		for(TbTypeTemplate typeTemplate : typeTemplateList){
+			List<Map> brandList = JSON.parseArray(typeTemplate.getBrandIds(),Map.class);
+			//缓存品牌列表
+			redisTemplate.boundHashOps("brandList").put(typeTemplate.getId(),brandList);
+			//缓存规格列表
+			redisTemplate.boundHashOps("specList").put(typeTemplate.getId(),findSpecList(typeTemplate.getId()));
+		}
+		System.out.println("缓存： 品牌及规格列表");
+	}
+
 
 }

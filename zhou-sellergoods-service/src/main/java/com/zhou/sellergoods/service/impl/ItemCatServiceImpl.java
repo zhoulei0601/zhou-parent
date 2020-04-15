@@ -4,11 +4,13 @@ import com.alibaba.dubbo.config.annotation.Service;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.zhou.mapper.TbItemCatMapper;
+import com.zhou.pojo.TbItem;
 import com.zhou.pojo.TbItemCat;
 import com.zhou.pojo.TbItemCatExample;
 import com.zhou.sellergoods.service.ItemCatService;
 import entity.PageResult;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 
 import java.util.List;
 
@@ -22,6 +24,10 @@ public class ItemCatServiceImpl implements ItemCatService {
 
 	@Autowired
 	private TbItemCatMapper itemCatMapper;
+
+	//redis 服务
+	@Autowired
+	private RedisTemplate redisTemplate;
 	
 	/**
 	 * 查询全部
@@ -109,7 +115,24 @@ public class ItemCatServiceImpl implements ItemCatService {
 		TbItemCatExample example = new TbItemCatExample();
 		TbItemCatExample.Criteria criteria = example.createCriteria();
 		criteria.andParentIdEqualTo(id);
+		//一次性缓存商品分类（增加，修改，删除，查询 都会调用）
+		cacheItemCat();
 		return itemCatMapper.selectByExample(example);
+	}
+
+	/**
+	  * @description 缓存商品分类表
+	  * @params []
+	  * @return void
+	  * @author zhoulei
+	  * @createtime 2020-04-15 08:59
+	  */
+	private void cacheItemCat(){
+		List<TbItemCat> itemCatList = findAll();
+		for(TbItemCat itemCat : itemCatList){
+			redisTemplate.boundHashOps("itemCat").put(itemCat.getName(),itemCat.getTypeId());
+		}
+		System.out.println("更新缓存：itemCat 商品分类表");
 	}
 
 }

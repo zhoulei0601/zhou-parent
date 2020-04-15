@@ -8,7 +8,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.data.solr.core.SolrTemplate;
+import org.springframework.data.solr.core.query.Criteria;
+import org.springframework.data.solr.core.query.Query;
 import org.springframework.data.solr.core.query.SimpleQuery;
+import org.springframework.data.solr.core.query.result.ScoredPage;
 import org.springframework.stereotype.Component;
 
 import java.io.UnsupportedEncodingException;
@@ -61,10 +64,18 @@ public class SolrUtil {
         solrTemplate.commit();
     }
 
+    public void selectEmpty(){
+        Query query = new SimpleQuery();
+        Criteria criteria = new Criteria("item_keywords").is("");
+        query.addCriteria(criteria);
+        ScoredPage<TbItem> scoredPage = solrTemplate.queryForPage(query,TbItem.class);
+        System.out.println(scoredPage.getTotalElements());
+    }
+
     public static void main(String[] args) {
         // applicationContext*.xml 在jar包中，classpath*搜索jar
         ApplicationContext context = new ClassPathXmlApplicationContext("classpath*:spring/applicationContext*.xml");
         SolrUtil solrUtil = (SolrUtil) context.getBean("solrUtil");
-        solrUtil.importItemData();
+        solrUtil.selectEmpty();
     }
 }
