@@ -3,10 +3,12 @@ package com.zhou.search.service.impl;
 import com.alibaba.dubbo.common.utils.StringUtils;
 import com.alibaba.dubbo.config.annotation.Service;
 import com.zhou.pojo.TbItem;
+import com.zhou.pojo.TbItemCat;
 import com.zhou.search.service.ItemSearchItemService;
 import entity.SearchItem;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.solr.core.SolrTemplate;
 import org.springframework.data.solr.core.query.*;
@@ -45,7 +47,11 @@ public class ItemSearchServiceImpl implements ItemSearchItemService {
     public SearchItem search(SearchItem searchItem) {
         SearchItem searchItemReturn = new SearchItem();
         //1.查询高亮列表
-        searchItemReturn.setItemList(listData(searchItem));
+        SearchItem returnItem = listData(searchItem);
+        searchItemReturn.setItemList(returnItem.getItemList());
+        searchItemReturn.setTotalRows(returnItem.getTotalRows());
+        searchItemReturn.setTotalPages(returnItem.getTotalPages());
+        searchItemReturn.setPageNo(returnItem.getPageNo());
         //2.查询商品分类
         List<String> categoryList = listCategoryGroup(searchItem);
         searchItemReturn.setCategoryList(categoryList);
@@ -69,8 +75,12 @@ public class ItemSearchServiceImpl implements ItemSearchItemService {
       * @author zhoulei
       * @createtime 2020-04-14 22:32
       */
-    private List<TbItem> listData(SearchItem searchItem){
+    private SearchItem listData(SearchItem searchItem){
         String keyWords = searchItem.getKeyWords();
+        //关键字之间有空格会破坏分词
+        if(StringUtils.isNotEmpty(keyWords)){
+            searchItem.setKeyWords(keyWords.replaceAll(" ",""));
+        }
         //关键字高亮
         HighlightQuery highlightQuery = new SimpleHighlightQuery();
 
@@ -116,6 +126,44 @@ public class ItemSearchServiceImpl implements ItemSearchItemService {
             highlightQuery.addFilterQuery(filterQuery);
         }
 
+        //1.5 价格过滤
+        if(StringUtils.isNotEmpty(searchItem.getPrice())){
+            String[] prices = searchItem.getPrice().split("-");
+            if(!"0".equals(prices[0])){
+                FilterQuery filterQuery = new SimpleFilterQuery();
+                Criteria filterCriteria = new Criteria("item_price").greaterThanEqual(prices[0]);
+                filterQuery.addCriteria(filterCriteria);
+                highlightQuery.addFilterQuery(filterQuery);
+            }
+            if(!"*".equals(prices[1])){
+                FilterQuery filterQuery = new SimpleFilterQuery();
+                Criteria filterCriteria = new Criteria("item_price").lessThanEqual(prices[1]);
+                filterQuery.addCriteria(filterCriteria);
+                highlightQuery.addFilterQuery(filterQuery);
+            }
+        }
+        
+        //1.6 分页
+        Integer pageNo = StringUtils.isEmpty(searchItem.getPageNo()) ? 1 : Integer.valueOf(searchItem.getPageNo());
+        Integer pageSize = StringUtils.isEmpty(searchItem.getPageSize()) ? 20 : Integer.valueOf(searchItem.getPageSize());
+        highlightQuery.setOffset((pageNo - 1) * pageSize);//起始索引
+        highlightQuery.setRows(pageSize);//每页记录数
+
+
+        //1.7 排序
+        String sortField = searchItem.getSortField();
+        String sortValue = searchItem.getSort();
+        if(StringUtils.isNotEmpty(sortField)){
+            Sort sort = null;
+            if("asc".equalsIgnoreCase(sortValue)){
+                sort = new Sort(Sort.Direction.ASC,"item_" + sortField);
+            }else{
+                sort = new Sort(Sort.Direction.DESC,"item_" + sortField);
+            }
+            highlightQuery.addSort(sort);
+        }
+        
+
         //高亮页
         HighlightPage<TbItem> highlightPage = solrTemplate.queryForHighlightPage(highlightQuery,TbItem.class);
 
@@ -132,7 +180,12 @@ public class ItemSearchServiceImpl implements ItemSearchItemService {
                 }
             }
         }
-        return highlightPage.getContent();
+        SearchItem returnItem = new SearchItem();
+        returnItem.setItemList(highlightPage.getContent());
+        returnItem.setTotalPages(String.valueOf(highlightPage.getTotalPages()));//总页数
+        returnItem.setTotalRows(String.valueOf(highlightPage.getTotalElements()));//总记录数
+        returnItem.setPageNo(searchItem.getPageNo());
+        return returnItem;
     }
 
     /**
@@ -196,4 +249,34 @@ public class ItemSearchServiceImpl implements ItemSearchItemService {
         List<Map> specList = (List<Map>) redisTemplate.boundHashOps("specList").get(typeId);
         return specList;
     }
+
+    /**
+      * @description 更新索引库
+      * @params [list]
+      * @return void
+      * @author zhoulei
+      * @createtime 2020-04-15 17:59
+      */
+    @Override
+    public void importItemCat(List<TbItem> list) {
+        solrTemplate.saveBeans(list);
+        solrTemplate.commit();
+    }
+
+    /**
+      * @description 删除商品索引库
+      * @params [ids]
+      * @return void
+      * @author zhoulei
+      * @createtime 2020-04-15 17:59
+      */
+    @Override
+    public void deleteItemCat(Long[] ids) {
+        Query query = new SimpleQuery();
+        Criteria criteria = new Criteria("item_goodsid").in(ids);
+        query.addCriteria(criteria);
+        solrTemplate.delete(query);
+        solrTemplate.commit();
+    }
+
 }

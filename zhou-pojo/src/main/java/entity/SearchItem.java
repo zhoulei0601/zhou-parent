@@ -21,6 +21,13 @@ public class SearchItem implements Serializable {
     private String category;//商品分类
     private String brand;//品牌
     private Map spec;//规格
+    private String price;//价格
+    private String sort; //排序
+    private String  pageNo;//页码
+    private String pageSize;//每页大小
+    private String totalRows;//总记录
+    private String totalPages;//总页数
+    private String sortField;//排序字段
 
 
 
@@ -86,5 +93,61 @@ public class SearchItem implements Serializable {
 
     public Map getSpec() {
         return spec;
+    }
+
+    public String getPrice() {
+        return price;
+    }
+
+    public void setPrice(String price) {
+        this.price = price;
+    }
+
+    public String getSort() {
+        return sort;
+    }
+
+    public void setSort(String sort) {
+        this.sort = sort;
+    }
+
+    public String getPageNo() {
+        return pageNo;
+    }
+
+    public void setPageNo(String pageNo) {
+        this.pageNo = pageNo;
+    }
+
+    public String getPageSize() {
+        return pageSize;
+    }
+
+    public void setPageSize(String pageSize) {
+        this.pageSize = pageSize;
+    }
+
+    public String getTotalRows() {
+        return totalRows;
+    }
+
+    public void setTotalRows(String totalRows) {
+        this.totalRows = totalRows;
+    }
+
+    public String getTotalPages() {
+        return totalPages;
+    }
+
+    public void setTotalPages(String totalPages) {
+        this.totalPages = totalPages;
+    }
+
+    public String getSortField() {
+        return sortField;
+    }
+
+    public void setSortField(String sortField) {
+        this.sortField = sortField;
     }
 }

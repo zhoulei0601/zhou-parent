@@ -76,6 +76,6 @@ public class SolrUtil {
         // applicationContext*.xml 在jar包中，classpath*搜索jar
         ApplicationContext context = new ClassPathXmlApplicationContext("classpath*:spring/applicationContext*.xml");
         SolrUtil solrUtil = (SolrUtil) context.getBean("solrUtil");
-        solrUtil.selectEmpty();
+        solrUtil.importItemData();
     }
 }

@@ -1,7 +1,12 @@
 package com.zhou.manager.controller;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import com.zhou.pojo.TbItem;
 import com.zhou.pojogroup.Goods;
+import com.zhou.search.service.ItemSearchItemService;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -22,6 +27,9 @@ public class GoodsController {
 
 	@Reference
 	private GoodsService goodsService;
+
+	@Reference
+	private ItemSearchItemService searchItemService; //搜索服务
 	
 	/**
 	 * 返回全部列表
@@ -77,6 +85,7 @@ public class GoodsController {
 	public Result delete(Long [] ids){
 		try {
 			goodsService.delete(ids);
+			searchItemService.deleteItemCat(ids);
 			return new Result(true, "删除成功"); 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -104,8 +113,17 @@ public class GoodsController {
 	  */
 	@RequestMapping("/updateStatus")
 	public Result updateStatus( String ids,String status){
-		int num = goodsService.updateStatus(ids.split(","),status);
+		String[] idArr = ids.split(",");
+		int num = goodsService.updateStatus(idArr,status);
 		if(num > 0){
+			if("1".equals(status)){
+				//商品审核通过 更新索引库
+				Long[] idArr2 =  Stream.of(idArr).map(s -> Long.valueOf(s)).collect(Collectors.toList()).toArray(new Long[]{});
+				List<TbItem> itemList = goodsService.findItemByIdAndStatus(idArr2,status);
+				if(!itemList.isEmpty()){
+					searchItemService.importItemCat(itemList);
+				}
+			}
 			return  new Result(true, "成功");
 		}
 		return new Result(false, "失败");
