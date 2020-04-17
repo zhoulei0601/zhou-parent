@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.zhou.page.service.ItemPageService;
 import com.zhou.pojo.TbItem;
 import com.zhou.pojogroup.Goods;
 import com.zhou.search.service.ItemSearchItemService;
@@ -30,6 +31,9 @@ public class GoodsController {
 
 	@Reference
 	private ItemSearchItemService searchItemService; //搜索服务
+
+	@Reference
+	private ItemPageService itemPageService; //静态模型服务
 	
 	/**
 	 * 返回全部列表
@@ -123,6 +127,8 @@ public class GoodsController {
 				if(!itemList.isEmpty()){
 					searchItemService.importItemCat(itemList);
 				}
+				// 生成 item静态模型 html
+				itemPageService.genItemHtml(idArr2);
 			}
 			return  new Result(true, "成功");
 		}

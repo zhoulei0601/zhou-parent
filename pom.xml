@@ -24,6 +24,9 @@
     <module>zhou-search-service</module>
     <module>zhou-search-web</module>
       <module>zhou-solr-util</module>
+      <module>zhou-page-interface</module>
+    <module>zhou-page-service</module>
+      <module>zhou-page-web</module>
   </modules>
 
 
