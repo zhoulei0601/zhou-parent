@@ -106,4 +106,19 @@ app.controller('goodsController' ,function($scope,$controller,goodsService,itemC
 			);
 		}
 	}
+	//删除
+	$scope.deleteItem = function(){
+		const ids =  $scope.selectIds;
+		if(ids.length > 0){
+			goodsService.dele(ids).success(
+				function (response) {
+					if(response.success){
+						$scope.reloadList();//重新加载
+					}else{
+						alert(response.message);
+					}
+				}
+			);
+		}
+	}
 });	

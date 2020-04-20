@@ -8,11 +8,7 @@
         http://code.alibabatech.com/schema/dubbo http://code.alibabatech.com/schema/dubbo/dubbo.xsd
         http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
 
-	<!--跑多个服务，防止端口占用-->
-    <dubbo:protocol name="dubbo" port="20884"></dubbo:protocol>
-	<dubbo:application name="zhou-page-service"/>
-    <dubbo:registry protocol="zookeeper" address="192.168.25.128:2181"/>
-    <dubbo:annotation package="com.zhou.page.service.impl" />
+	<context:component-scan base-package="com.zhou.page.service.impl"/>
 
 	<!--freemarker 配置-->
 	<bean id="freemarkerConfig"	class="org.springframework.web.servlet.view.freemarker.FreeMarkerConfigurer">

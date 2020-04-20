@@ -1,22 +1,27 @@
 package com.zhou.manager.controller;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-import com.zhou.page.service.ItemPageService;
+import com.alibaba.dubbo.config.annotation.Reference;
+import com.alibaba.fastjson.JSON;
+import com.zhou.pojo.TbGoods;
 import com.zhou.pojo.TbItem;
 import com.zhou.pojogroup.Goods;
-import com.zhou.search.service.ItemSearchItemService;
+import com.zhou.sellergoods.service.GoodsService;
+import entity.PageResult;
+import entity.Result;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jms.core.JmsTemplate;
+import org.springframework.jms.core.MessageCreator;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import com.alibaba.dubbo.config.annotation.Reference;
-import com.zhou.pojo.TbGoods;
-import com.zhou.sellergoods.service.GoodsService;
 
-import entity.PageResult;
-import entity.Result;
+import javax.jms.Destination;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.Session;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 /**
  * controller
  * @author Administrator
@@ -29,12 +34,19 @@ public class GoodsController {
 	@Reference
 	private GoodsService goodsService;
 
-	@Reference
-	private ItemSearchItemService searchItemService; //搜索服务
+	/*@Reference
+	private ItemPageService itemPageService; //静态模型服务*/
+	@Autowired
+	private JmsTemplate jmsTemplate;
+	@Autowired
+	private Destination queueSolrImportDestination;//solr导入索引库 消息目标
+	@Autowired
+	private Destination queueSolrDeleteDestination; //solr删除索引库 消息目标
+	@Autowired
+	private Destination topicPageDestination;//创建商品明细页面 消息目标
+	@Autowired
+	private Destination topicDeletePageDestination;//删除商品明细页面 消息目标
 
-	@Reference
-	private ItemPageService itemPageService; //静态模型服务
-	
 	/**
 	 * 返回全部列表
 	 * @return
@@ -89,7 +101,21 @@ public class GoodsController {
 	public Result delete(Long [] ids){
 		try {
 			goodsService.delete(ids);
-			searchItemService.deleteItemCat(ids);
+//			searchItemService.deleteItemCat(ids);
+			//删除索引库
+			jmsTemplate.send(queueSolrDeleteDestination, new MessageCreator() {
+				@Override
+				public Message createMessage(Session session) throws JMSException {
+					return session.createObjectMessage(ids);
+				}
+			});
+			//删除商品明细页
+			jmsTemplate.send(topicDeletePageDestination, new MessageCreator() {
+				@Override
+				public Message createMessage(Session session) throws JMSException {
+					return session.createObjectMessage(ids);
+				}
+			});
 			return new Result(true, "删除成功"); 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -125,10 +151,25 @@ public class GoodsController {
 				Long[] idArr2 =  Stream.of(idArr).map(s -> Long.valueOf(s)).collect(Collectors.toList()).toArray(new Long[]{});
 				List<TbItem> itemList = goodsService.findItemByIdAndStatus(idArr2,status);
 				if(!itemList.isEmpty()){
-					searchItemService.importItemCat(itemList);
+					String itemListJson = JSON.toJSONString(itemList);
+					jmsTemplate.send(queueSolrImportDestination, new MessageCreator() {
+						@Override
+						public Message createMessage(Session session) throws JMSException {
+							return session.createTextMessage(itemListJson);
+						}
+					});
+//					searchItemService.importItemCat(itemList);
 				}
 				// 生成 item静态模型 html
-				itemPageService.genItemHtml(idArr2);
+//				itemPageService.genItemHtml(idArr2);
+				if(idArr2.length > 0){
+					jmsTemplate.send(topicPageDestination, new MessageCreator() {
+						@Override
+						public Message createMessage(Session session) throws JMSException {
+							return session.createObjectMessage(idArr2);
+						}
+					});
+				}
 			}
 			return  new Result(true, "成功");
 		}

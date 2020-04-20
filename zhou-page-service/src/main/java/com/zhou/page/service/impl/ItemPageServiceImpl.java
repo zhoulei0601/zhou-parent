@@ -1,6 +1,5 @@
 package com.zhou.page.service.impl;
 
-import com.alibaba.dubbo.config.annotation.Service;
 import com.zhou.mapper.TbGoodsDescMapper;
 import com.zhou.mapper.TbGoodsMapper;
 import com.zhou.mapper.TbItemCatMapper;
@@ -15,7 +14,7 @@ import freemarker.template.Template;
 import freemarker.template.TemplateException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.PropertySource;
+import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.view.freemarker.FreeMarkerConfig;
 
 import java.io.File;
@@ -102,5 +101,21 @@ public class ItemPageServiceImpl implements ItemPageService {
             }
         }
         return true;
+    }
+
+    /**
+      * @description 删除商品明细页
+      * @params [ids]
+      * @return void
+      * @author zhoulei
+      * @createtime 2020-04-20 13:10
+      */
+    public void deleteItemPage(Long[] ids){
+        for(Long id : ids){
+            File file = new File(pageDir + id + ".html");
+            if(file != null){
+                file.delete();
+            }
+        }
     }
 }

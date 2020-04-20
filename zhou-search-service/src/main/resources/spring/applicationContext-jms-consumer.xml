@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:context="http://www.springframework.org/schema/context" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:jms="http://www.springframework.org/schema/jms"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context
+		http://www.springframework.org/schema/context/spring-context.xsd">
+
+    <!--提供Connection的ConnectionFactory 由JMS厂商Activemq 提供-->
+    <bean id="targetConnetionFactory" class="org.apache.activemq.ActiveMQConnectionFactory">
+        <property name="brokerURL" value="tcp://192.168.25.128:61616"/>
+    </bean>
+
+    <!--ConnectionFactory 交由spring 管理-->
+    <!--1、SingleConnectionFactory：对于建立JMS服务器链接的请求会一直返回同一个链接，并且会忽略Connection的close方法调用。(org.springframework.jms.connection.SingleConnectionFactory)
+        2、CachingConnectionFactory：继承了SingleConnectionFactory，所以它拥有SingleConnectionFactory的所有功能，同时它还新增了缓存功能，它可以缓存Session、MessageProducer和MessageConsumer。我们使用CachingConnectionFactory来作为示例。(org.springframework.jms.connection.CachingConnectionFactory)
+        3、PooledConnectionFactory：线程池(org.apache.activemq.pool.PooledConnectionFactory)-->
+    <bean id="conntionFactory" class="org.springframework.jms.connection.SingleConnectionFactory">
+        <property name="targetConnectionFactory" ref="targetConnetionFactory"/>
+    </bean>
+
+    <!--消息点对点模式，solr导入索引库信息 目标-->
+    <bean id="queueSolrImportDestination" class="org.apache.activemq.command.ActiveMQQueue">
+        <constructor-arg value="zhou_queue_solr_import"/>
+    </bean>
+    <!--消息点对点模式，solr删除索引库信息 目标-->
+    <bean id="queueSolrDeleteDestination" class="org.apache.activemq.command.ActiveMQQueue">
+        <constructor-arg value="zhou_queue_solr_delete"/>
+    </bean>
+
+    <!--solr导入索引库消息监听容器-->
+    <bean class="org.springframework.jms.listener.DefaultMessageListenerContainer">
+        <property name="connectionFactory" ref="conntionFactory"/>
+        <property name="destination" ref="queueSolrImportDestination"/>
+        <property name="messageListener" ref="itemSolrImportListener"/>
+    </bean>
+
+    <!--solr删除索引库消息监听容器-->
+    <bean class="org.springframework.jms.listener.DefaultMessageListenerContainer">
+        <property name="connectionFactory" ref="conntionFactory"/>
+        <property name="destination" ref="queueSolrDeleteDestination"/>
+        <property name="messageListener" ref="itemSolrDeleteListener"/>
+    </bean>
+</beans>
